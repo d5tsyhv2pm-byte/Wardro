@@ -1,0 +1,1775 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Palette — Il tuo consulente d'immagine personale</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#F2EFE9">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Palette">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-512.png">
+<style>:root {
+  --ivory: #F2EFE9;
+  --paper: #FBFAF7;
+  --ink: #211F1C;
+  --stone: #8C877D;
+  --stone-light: #B9B4A8;
+  --line: #DAD4C8;
+  --accent: #B7574A;
+  --accent-dark: #8C3F35;
+  --pine: #2E5C55;
+  --ok: #4A7A5B;
+  --mid: #B98A2E;
+  --off: #A6483C;
+  --radius: 14px;
+  --font-display: Georgia, 'Iowan Old Style', 'Palatino Linotype', ui-serif, serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--ivory);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  min-height: 100vh;
+  padding-bottom: 84px;
+}
+
+h1, h2, h3 { font-family: var(--font-display); font-weight: 500; margin: 0 0 8px; }
+h2 { font-size: 26px; }
+h3 { font-size: 18px; margin-top: 24px; }
+p { line-height: 1.5; margin: 0 0 12px; }
+.muted { color: var(--stone); }
+.tiny { font-size: 11px; }
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 11px;
+  color: var(--accent-dark);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.eyebrow.small { font-size: 10px; margin-top: 18px; }
+
+/* ---------- HEADER ---------- */
+.app-header {
+  padding: 22px 20px 14px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.app-header .brand {
+  font-family: var(--font-display);
+  font-size: 20px;
+  letter-spacing: 0.02em;
+}
+.app-header .brand .dot {
+  display: inline-block;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-right: 8px;
+}
+
+/* ---------- LAYOUT ---------- */
+.app-shell {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+}
+.sidebar { display: none; }
+
+main {
+  flex: 1;
+  padding: 20px 18px 40px;
+}
+
+.view { display: none; }
+.view.active { display: block; animation: fadeIn 0.25s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* ---------- NAV (bottom bar, mobile-first) ---------- */
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  display: flex;
+  background: var(--paper);
+  border-top: 1px solid var(--line);
+  z-index: 30;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.nav-item {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 10px 4px 8px;
+  font-family: var(--font-body);
+  font-size: 10.5px;
+  color: var(--stone);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+}
+.nav-item .nav-dot {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--stone-light);
+  display: flex; align-items: center; justify-content: center;
+}
+.nav-item.active { color: var(--ink); font-weight: 600; }
+.nav-item.active .nav-dot { border-color: var(--accent); background: var(--accent); }
+
+/* ---------- CARDS ---------- */
+.card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.result-card { position: relative; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 20px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-align: center;
+}
+.btn-primary { background: var(--ink); color: var(--paper); }
+.btn-primary:disabled { background: var(--stone-light); cursor: not-allowed; }
+.btn-outline { background: transparent; border-color: var(--ink); color: var(--ink); }
+.btn-text { background: none; border: none; color: var(--off); font-size: 12px; padding: 4px 0; cursor: pointer; text-decoration: underline; }
+.file-btn { width: 100%; margin-top: 8px; }
+.file-btn input { display: none; }
+
+/* ---------- SWATCHES ---------- */
+.swatch-fan {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 14px 0 6px;
+}
+.swatch {
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.08);
+  flex-shrink: 0;
+}
+.swatch-fan.small .swatch { width: 26px; height: 26px; }
+.season-title { font-size: 34px; }
+
+.margin-note {
+  background: #FBF1DE;
+  border: 1px solid #E9C46A;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12.5px;
+  color: #6B5416;
+  margin: 4px 0 6px;
+  line-height: 1.45;
+}
+
+.checklist {
+  margin: 0 0 14px;
+  padding-left: 20px;
+  font-size: 13.5px;
+  color: var(--stone);
+}
+.checklist li { margin-bottom: 6px; }
+
+/* ---------- MARKER ANALYSIS ---------- */
+.marker-controls { display: flex; gap: 8px; margin-bottom: 14px; }
+.chip {
+  border: 1px solid var(--line);
+  background: var(--ivory);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--stone);
+}
+.chip.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.canvas-wrap { display: flex; justify-content: center; margin-bottom: 16px; }
+#face-canvas { border-radius: var(--radius); border: 1px solid var(--line); touch-action: manipulation; }
+
+/* ---------- WARDROBE ---------- */
+.wardrobe-toolbar {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  margin-bottom: 6px;
+}
+.wardrobe-filter {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 12.5px;
+  color: var(--stone);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.wardrobe-filter.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+.wardrobe-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.item-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.item-photo {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--ivory);
+}
+.item-photo.small { width: 56px; height: 56px; border-radius: 10px; aspect-ratio: unset; }
+.item-body { padding: 10px 12px 12px; }
+.item-top-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.color-dot { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.1); }
+.item-name { font-weight: 600; font-size: 13.5px; margin-bottom: 2px; }
+.item-cat { font-size: 11.5px; }
+
+.status-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+.status-ok { background: #E4EFE6; color: var(--ok); }
+.status-mid { background: #F6EBD6; color: var(--mid); }
+.status-off { background: #F5E1DE; color: var(--off); }
+.status-neutral { background: #E9E7E1; color: var(--stone); }
+
+.empty-state {
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  padding: 24px;
+  text-align: center;
+  color: var(--stone);
+  font-size: 13.5px;
+}
+
+.fab {
+  position: fixed;
+  right: 18px;
+  bottom: 92px;
+  z-index: 25;
+  box-shadow: 0 6px 18px rgba(33,31,28,0.25);
+}
+
+/* ---------- MODAL ---------- */
+.modal-backdrop {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(33,31,28,0.45);
+  z-index: 50;
+}
+.modal {
+  display: none;
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  background: var(--paper);
+  border-radius: 20px 20px 0 0;
+  z-index: 51;
+  padding: 20px 20px calc(24px + env(safe-area-inset-bottom));
+  max-height: 88vh;
+  overflow-y: auto;
+}
+.modal.open, .modal.open + .modal-backdrop, .modal-backdrop.open { display: block; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.modal-close { background: none; border: none; font-size: 22px; color: var(--stone); cursor: pointer; }
+
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 12px; color: var(--stone); margin-bottom: 6px; font-weight: 600; }
+.field input[type="text"], .field select {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 14px;
+  background: var(--ivory);
+  color: var(--ink);
+}
+.photo-drop {
+  width: 100%;
+  aspect-ratio: 4/3;
+  border: 1.5px dashed var(--stone-light);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--stone);
+  font-size: 13px;
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+  text-align: center;
+  padding: 12px;
+}
+.photo-drop.has-photo { border-style: solid; color: transparent; }
+.color-preview-row { display: flex; align-items: center; gap: 10px; margin: 10px 0; }
+.color-preview-row .swatch { width: 28px; height: 28px; }
+
+/* ---------- OUTFIT ---------- */
+.outfit-list, #outfit-results { display: flex; flex-direction: column; gap: 12px; }
+.outfit-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+.outfit-pieces { display: flex; gap: 12px; flex-wrap: wrap; }
+.outfit-piece { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.pairing-list { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+
+/* ---------- WEATHER ---------- */
+.weather-card { text-align: left; }
+.weather-temp { font-family: var(--font-display); font-size: 44px; }
+
+/* ---------- SETTINGS ---------- */
+.settings-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.settings-row:last-child { border-bottom: none; }
+.radio-row { display: flex; gap: 16px; margin: 8px 0 14px; font-size: 13px; }
+
+/* ---------- DESKTOP ---------- */
+@media (min-width: 860px) {
+  body { padding-bottom: 0; }
+  .app-shell { max-width: 1040px; }
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    width: 220px;
+    padding: 28px 12px;
+    border-right: 1px solid var(--line);
+    gap: 4px;
+    position: sticky;
+    top: 65px;
+    height: calc(100vh - 65px);
+  }
+  .sidebar .nav-item { flex-direction: row; justify-content: flex-start; padding: 10px 12px; border-radius: 10px; font-size: 13px; }
+  .sidebar .nav-item:hover { background: var(--ivory); }
+  .bottom-nav { display: none; }
+  main { padding: 32px 40px; }
+  .wardrobe-grid { grid-template-columns: repeat(3, 1fr); }
+  .modal { left: 50%; bottom: auto; top: 50%; transform: translate(-50%, -50%); width: 460px; border-radius: 20px; max-height: 82vh; }
+  .fab { right: calc((100vw - 1040px) / 2 + 20px); }
+}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="brand"><span class="dot"></span>Palette</div>
+  <div class="muted tiny" id="header-season-label"></div>
+</header>
+
+<div class="app-shell">
+  <nav class="sidebar">
+    <button class="nav-item" data-tab="profilo"><span class="nav-dot"></span>Profilo colore</button>
+    <button class="nav-item" data-tab="guardaroba"><span class="nav-dot"></span>Guardaroba</button>
+    <button class="nav-item" data-tab="outfit"><span class="nav-dot"></span>Outfit</button>
+    <button class="nav-item" data-tab="meteo"><span class="nav-dot"></span>Meteo</button>
+    <button class="nav-item" data-tab="acquisto"><span class="nav-dot"></span>Nuovo acquisto</button>
+    <button class="nav-item" data-tab="impostazioni"><span class="nav-dot"></span>Impostazioni</button>
+  </nav>
+
+  <main>
+
+    <!-- PROFILO -->
+    <section class="view" id="view-profilo"></section>
+
+    <!-- GUARDAROBA -->
+    <section class="view" id="view-guardaroba">
+      <div class="eyebrow">Il mio catalogo</div>
+      <h2>Guardaroba</h2>
+      <div class="wardrobe-toolbar">
+        <button class="wardrobe-filter active" data-cat="tutti">Tutti</button>
+        <button class="wardrobe-filter" data-cat="camicie">Camicie</button>
+        <button class="wardrobe-filter" data-cat="magliette">Magliette</button>
+        <button class="wardrobe-filter" data-cat="pantaloni">Pantaloni</button>
+        <button class="wardrobe-filter" data-cat="jeans">Jeans</button>
+        <button class="wardrobe-filter" data-cat="giacche">Giacche</button>
+        <button class="wardrobe-filter" data-cat="scarpe">Scarpe</button>
+        <button class="wardrobe-filter" data-cat="accessori">Accessori</button>
+      </div>
+      <div class="wardrobe-grid" id="wardrobe-grid"></div>
+    </section>
+
+    <!-- OUTFIT -->
+    <section class="view" id="view-outfit">
+      <div class="eyebrow">Abbinamenti</div>
+      <h2>Crea un outfit</h2>
+      <p class="muted">Combinazioni generate dal tuo guardaroba, in base alla tua palette colore.</p>
+      <div id="outfit-info"></div>
+      <button class="btn btn-primary" id="btn-generate-outfits" style="margin-bottom:16px;">Genera altre combinazioni</button>
+      <div id="outfit-results"></div>
+    </section>
+
+    <!-- METEO -->
+    <section class="view" id="view-meteo">
+      <div class="eyebrow">Outfit del giorno</div>
+      <h2>Meteo</h2>
+      <div class="field">
+        <label for="weather-api-key">API key OpenWeatherMap (gratuita)</label>
+        <input type="text" id="weather-api-key" placeholder="Incolla qui la tua chiave">
+      </div>
+      <button class="btn btn-primary" id="btn-fetch-weather">Usa la mia posizione</button>
+      <div id="weather-result" style="margin-top:18px;"></div>
+    </section>
+
+    <!-- NUOVO ACQUISTO -->
+    <section class="view" id="view-acquisto">
+      <div class="eyebrow">Prima di comprare</div>
+      <h2>Nuovo acquisto</h2>
+      <p class="muted">Fotografa il capo che vuoi acquistare per sapere se è in linea con la tua palette e come abbinarlo.</p>
+      <label class="photo-drop" id="purchase-photo-preview" for="purchase-photo-input">Tocca per scattare o caricare una foto</label>
+      <input type="file" accept="image/*" capture="environment" id="purchase-photo-input" hidden>
+      <div class="field" style="margin-top:14px;">
+        <label for="purchase-category">Categoria del capo</label>
+        <select id="purchase-category">
+          <option value="camicie">Camicia</option>
+          <option value="magliette">Maglietta</option>
+          <option value="pantaloni">Pantalone</option>
+          <option value="jeans">Jeans</option>
+          <option value="giacche">Giacca</option>
+          <option value="scarpe">Scarpe</option>
+          <option value="accessori">Accessorio</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" id="btn-purchase-analyze">Valuta questo capo</button>
+      <div id="purchase-result" style="margin-top:18px;"></div>
+    </section>
+
+    <!-- IMPOSTAZIONI -->
+    <section class="view" id="view-impostazioni">
+      <div class="eyebrow">Dati e backup</div>
+      <h2>Impostazioni</h2>
+
+      <div class="card">
+        <div class="settings-row"><span>Stagione colore</span><span id="settings-season" class="muted"></span></div>
+        <div class="settings-row"><span>Capi in guardaroba</span><span id="settings-item-count" class="muted"></span></div>
+      </div>
+
+      <div class="field">
+        <label for="settings-weather-key">API key OpenWeatherMap</label>
+        <input type="text" id="settings-weather-key" placeholder="Incolla qui la tua chiave" disabled>
+      </div>
+
+      <h3>Backup dei dati</h3>
+      <p class="muted">Tutti i dati (analisi, guardaroba, foto) restano solo su questo dispositivo. Esporta un backup per conservarlo o per portarlo su un altro dispositivo (es. da iPhone a Mac).</p>
+      <button class="btn btn-outline" id="btn-export" style="width:100%; margin-bottom:16px;">Esporta backup (.json)</button>
+
+      <h3>Importa backup</h3>
+      <div class="radio-row">
+        <label><input type="radio" name="import-mode" value="replace" checked> Sostituisci tutto</label>
+        <label><input type="radio" name="import-mode" value="merge"> Aggiungi ai dati esistenti</label>
+      </div>
+      <label class="btn btn-outline file-btn">
+        Scegli file di backup
+        <input type="file" accept="application/json" id="import-file-input" hidden>
+      </label>
+    </section>
+
+  </main>
+</div>
+
+<!-- NAV MOBILE -->
+<nav class="bottom-nav">
+  <button class="nav-item" data-tab="profilo"><span class="nav-dot"></span>Profilo</button>
+  <button class="nav-item" data-tab="guardaroba"><span class="nav-dot"></span>Guardaroba</button>
+  <button class="nav-item" data-tab="outfit"><span class="nav-dot"></span>Outfit</button>
+  <button class="nav-item" data-tab="meteo"><span class="nav-dot"></span>Meteo</button>
+  <button class="nav-item" data-tab="acquisto"><span class="nav-dot"></span>Acquisto</button>
+  <button class="nav-item" data-tab="impostazioni"><span class="nav-dot"></span>Altro</button>
+</nav>
+
+<button class="btn btn-primary fab" id="btn-add-item">+ Aggiungi capo</button>
+
+<!-- MODAL AGGIUNGI CAPO -->
+<div class="modal" id="item-modal">
+  <div class="modal-header">
+    <h3 style="margin:0;">Nuovo capo</h3>
+    <button class="modal-close" id="item-modal-close">&times;</button>
+  </div>
+  <form id="item-form">
+    <label class="photo-drop" id="item-photo-preview" for="item-photo-input">Tocca per scattare o caricare una foto</label>
+    <input type="file" accept="image/*" capture="environment" id="item-photo-input" hidden>
+    <div class="color-preview-row">
+      <div class="swatch" id="item-color-preview"></div>
+      <span class="muted tiny">Colore dominante rilevato automaticamente</span>
+    </div>
+    <div class="field">
+      <label for="item-name">Nome (facoltativo)</label>
+      <input type="text" name="name" id="item-name" placeholder="Es. Camicia lino azzurra">
+    </div>
+    <div class="field">
+      <label for="item-category">Categoria</label>
+      <select name="category" id="item-category">
+        <option value="camicie">Camicie</option>
+        <option value="magliette">Magliette</option>
+        <option value="pantaloni">Pantaloni</option>
+        <option value="jeans">Jeans</option>
+        <option value="giacche">Giacche</option>
+        <option value="scarpe">Scarpe</option>
+        <option value="accessori">Accessori</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="item-tags">Tag (separati da virgola: materiale, stile, peso)</label>
+      <input type="text" name="tags" id="item-tags" placeholder="Es. cotone, elegante, leggero">
+    </div>
+    <button type="submit" class="btn btn-primary" style="width:100%;">Salva nel guardaroba</button>
+  </form>
+</div>
+<div class="modal-backdrop" id="item-modal-backdrop"></div>
+
+<script>/* ===================== DB LAYER ===================== */
+const DB_NAME = 'armocromiaDB';
+const DB_VERSION = 1;
+let dbInstance = null;
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    if (dbInstance) return resolve(dbInstance);
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('meta')) {
+        db.createObjectStore('meta', { keyPath: 'key' });
+      }
+      if (!db.objectStoreNames.contains('wardrobe')) {
+        const store = db.createObjectStore('wardrobe', { keyPath: 'id', autoIncrement: true });
+        store.createIndex('category', 'category', { unique: false });
+      }
+    };
+    req.onsuccess = (e) => { dbInstance = e.target.result; resolve(dbInstance); };
+    req.onerror = (e) => reject(e.target.error);
+  });
+}
+
+function tx(storeName, mode = 'readonly') {
+  return openDB().then(db => db.transaction(storeName, mode).objectStore(storeName));
+}
+
+async function metaGet(key) {
+  const store = await tx('meta');
+  return new Promise((resolve, reject) => {
+    const r = store.get(key);
+    r.onsuccess = () => resolve(r.result ? r.result.value : null);
+    r.onerror = () => reject(r.error);
+  });
+}
+
+async function metaSet(key, value) {
+  const store = await tx('meta', 'readwrite');
+  return new Promise((resolve, reject) => {
+    const r = store.put({ key, value });
+    r.onsuccess = () => resolve(true);
+    r.onerror = () => reject(r.error);
+  });
+}
+
+async function wardrobeAdd(item) {
+  const store = await tx('wardrobe', 'readwrite');
+  return new Promise((resolve, reject) => {
+    const r = store.add(item);
+    r.onsuccess = () => resolve(r.result);
+    r.onerror = () => reject(r.error);
+  });
+}
+
+async function wardrobeUpdate(item) {
+  const store = await tx('wardrobe', 'readwrite');
+  return new Promise((resolve, reject) => {
+    const r = store.put(item);
+    r.onsuccess = () => resolve(true);
+    r.onerror = () => reject(r.error);
+  });
+}
+
+async function wardrobeDelete(id) {
+  const store = await tx('wardrobe', 'readwrite');
+  return new Promise((resolve, reject) => {
+    const r = store.delete(id);
+    r.onsuccess = () => resolve(true);
+    r.onerror = () => reject(r.error);
+  });
+}
+
+async function wardrobeAll() {
+  const store = await tx('wardrobe');
+  return new Promise((resolve, reject) => {
+    const r = store.getAll();
+    r.onsuccess = () => resolve(r.result || []);
+    r.onerror = () => reject(r.error);
+  });
+}
+
+async function wardrobeClear() {
+  const store = await tx('wardrobe', 'readwrite');
+  return new Promise((resolve, reject) => {
+    const r = store.clear();
+    r.onsuccess = () => resolve(true);
+    r.onerror = () => reject(r.error);
+  });
+}
+
+/* ===================== COLOR SCIENCE ===================== */
+
+function hexToRgb(hex) {
+  hex = hex.replace('#', '');
+  if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+  const num = parseInt(hex, 16);
+  return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+}
+
+function rgbToHex(r, g, b) {
+  return '#' + [r, g, b].map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
+}
+
+function rgbToXyz(r, g, b) {
+  let [rr, gg, bb] = [r / 255, g / 255, b / 255].map(v => (v > 0.04045 ? Math.pow((v + 0.055) / 1.055, 2.4) : v / 12.92) * 100);
+  return {
+    x: rr * 0.4124 + gg * 0.3576 + bb * 0.1805,
+    y: rr * 0.2126 + gg * 0.7152 + bb * 0.0722,
+    z: rr * 0.0193 + gg * 0.1192 + bb * 0.9505
+  };
+}
+
+function xyzToLab(x, y, z) {
+  const ref = { x: 95.047, y: 100.0, z: 108.883 };
+  let [xr, yr, zr] = [x / ref.x, y / ref.y, z / ref.z].map(v => (v > 0.008856 ? Math.cbrt(v) : (7.787 * v) + 16 / 116));
+  return { l: (116 * yr) - 16, a: 500 * (xr - yr), b: 200 * (yr - zr) };
+}
+
+function rgbToLab(r, g, b) {
+  const xyz = rgbToXyz(r, g, b);
+  return xyzToLab(xyz.x, xyz.y, xyz.z);
+}
+
+function hexToLab(hex) {
+  const { r, g, b } = hexToRgb(hex);
+  return rgbToLab(r, g, b);
+}
+
+function deltaE(lab1, lab2) {
+  return Math.sqrt((lab1.l - lab2.l) ** 2 + (lab1.a - lab2.a) ** 2 + (lab1.b - lab2.b) ** 2);
+}
+
+function rgbToHsl(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h, s, l = (max + min) / 2;
+  if (max === min) { h = s = 0; }
+  else {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h /= 6;
+  }
+  return { h: h * 360, s: s * 100, l: l * 100 };
+}
+
+/* ===================== SEASON PALETTES ===================== */
+
+const SEASONS = {
+  primavera: {
+    name: 'Primavera',
+    sottotono: 'caldo',
+    profondita: 'chiara/media',
+    descrizione: 'Sottotono caldo, colori chiari, luminosi e vivaci. Contrasto medio, mai smorzato o troppo cupo.',
+    colors: ['#FF6F59','#FFB238','#FFD166','#8DD17E','#5FC9A8','#3EC1D3','#F76E9C','#F4A261','#E9C46A','#7FB800','#EF798A','#F9A03F','#00A896','#FF9F1C','#C9E265','#F7DBA7','#E07A5F','#81B29A','#F2CC8F','#FF9770'],
+    neutrals: ['#F5EBDD','#FFF8F0','#B08968','#8B6B4A','#556B2F']
+  },
+  estate: {
+    name: 'Estate',
+    sottotono: 'freddo',
+    profondita: 'chiara/media',
+    descrizione: 'Sottotono freddo, colori tenui, impolverati e delicati. Basso-medio contrasto, mai giallastri o troppo intensi.',
+    colors: ['#A5B8D9','#C6A4C9','#8FA3AD','#D6A2AD','#89A8B2','#B8C4D9','#E6C1D1','#9FB6CD','#C6C9E0','#7C93A0','#A6A2C0','#B4C6E7','#8AA1B1','#D8BFD8','#9CADCE','#E0C3E8','#7395AE','#B0A8B9','#C9CBFF','#9AB0A6'],
+    neutrals: ['#E8E6E1','#D9D2C9','#8C8C8C','#5B6470','#4A5A6A']
+  },
+  autunno: {
+    name: 'Autunno',
+    sottotono: 'caldo',
+    profondita: 'media/scura',
+    descrizione: 'Sottotono caldo, colori profondi, terrosi e smorzati. Contrasto medio, mai freddi o troppo brillanti.',
+    colors: ['#B5651D','#8B5E34','#6B4226','#A0522D','#C1440E','#BC6C25','#606C38','#283618','#DDA15E','#9C6644','#7C6A46','#8A4B08','#4A5D23','#B08968','#D4A373','#7F5539','#936639','#A68A64','#6F4E37','#C08552'],
+    neutrals: ['#EDE0D4','#D6C7A1','#5C4033','#4B3621','#3B3024']
+  },
+  inverno: {
+    name: 'Inverno',
+    sottotono: 'freddo',
+    profondita: 'media/scura',
+    descrizione: 'Sottotono freddo, colori intensi, saturi e ad alto contrasto. Mai smorzati, pastello o terrosi.',
+    colors: ['#0B1D51','#7209B7','#3A0CA3','#B5179E','#F72585','#4361EE','#023E8A','#03071E','#780000','#1B4332','#004B23','#480CA8','#560BAD','#2B2D42','#8D0801','#08415C','#5A189A','#001233','#9D0208','#006D77'],
+    neutrals: ['#FFFFFF','#000000','#1C1C1C','#3D3D3D','#0A2342']
+  }
+};
+
+const TRUE_NEUTRALS = ['#FFFFFF','#F5F5F0','#000000','#1A1A1A','#2E2E2E','#808080','#B0B0B0','#D9D9D9','#0F2A4A','#1E3A5F']; // bianco, nero, grigi, denim/navy scuro
+
+function isNearNeutral(hex) {
+  const { r, g, b } = hexToRgb(hex);
+  const { s, l } = rgbToHsl(r, g, b);
+  return s < 12 || l < 8 || l > 94; // molto desaturato, quasi nero o quasi bianco
+}
+
+/**
+ * Restituisce { status: 'in linea'|'parziale'|'fuori palette'|'neutro', score, closest }
+ */
+function evaluateColorAgainstSeason(hex, seasonKey) {
+  if (!seasonKey || !SEASONS[seasonKey]) return { status: 'n/d', score: null, closest: null };
+  if (isNearNeutral(hex)) {
+    return { status: 'neutro', score: 8, closest: hex };
+  }
+  const season = SEASONS[seasonKey];
+  const lab = hexToLab(hex);
+  let minD = Infinity, closest = null;
+  for (const c of [...season.colors, ...season.neutrals]) {
+    const d = deltaE(lab, hexToLab(c));
+    if (d < minD) { minD = d; closest = c; }
+  }
+  let status;
+  if (minD < 18) status = 'in linea';
+  else if (minD < 32) status = 'parziale';
+  else status = 'fuori palette';
+  return { status, score: Math.max(0, 100 - minD * 2), closest };
+}
+
+/* ===================== IMAGE PROCESSING ===================== */
+
+function loadImageFromFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = reader.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/** Ridimensiona e comprime un'immagine, ritorna dataURL jpeg */
+function compressImage(img, maxDim = 900, quality = 0.82) {
+  const canvas = document.createElement('canvas');
+  let { width, height } = img;
+  if (width > height && width > maxDim) { height = height * (maxDim / width); width = maxDim; }
+  else if (height > maxDim) { width = width * (maxDim / height); height = maxDim; }
+  canvas.width = width; canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, width, height);
+  return canvas.toDataURL('image/jpeg', quality);
+}
+
+function dataUrlToImage(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+}
+
+/** Estrae il colore dominante di un capo escludendo lo sfondo (flatlay su superficie chiara/uniforme) */
+function extractDominantColor(img) {
+  const size = 120;
+  const canvas = document.createElement('canvas');
+  canvas.width = size; canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, size, size);
+  const data = ctx.getImageData(0, 0, size, size).data;
+
+  // stima colore di sfondo dai bordi
+  const borderPixels = [];
+  for (let x = 0; x < size; x++) {
+    borderPixels.push(getPixel(data, size, x, 0));
+    borderPixels.push(getPixel(data, size, x, size - 1));
+  }
+  for (let y = 0; y < size; y++) {
+    borderPixels.push(getPixel(data, size, 0, y));
+    borderPixels.push(getPixel(data, size, size - 1, y));
+  }
+  const bg = averageRgb(borderPixels);
+
+  // istogramma quantizzato sui pixel non-sfondo
+  const buckets = {};
+  const bucketSize = 20;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const px = getPixel(data, size, x, y);
+      const distBg = Math.sqrt((px.r - bg.r) ** 2 + (px.g - bg.g) ** 2 + (px.b - bg.b) ** 2);
+      if (distBg < 28) continue; // probabile sfondo
+      const key = [Math.floor(px.r / bucketSize), Math.floor(px.g / bucketSize), Math.floor(px.b / bucketSize)].join(',');
+      if (!buckets[key]) buckets[key] = { count: 0, r: 0, g: 0, b: 0 };
+      buckets[key].count++; buckets[key].r += px.r; buckets[key].g += px.g; buckets[key].b += px.b;
+    }
+  }
+  let best = null;
+  for (const k in buckets) {
+    if (!best || buckets[k].count > best.count) best = buckets[k];
+  }
+  if (!best) {
+    // fallback: media di tutta l'immagine
+    const all = [];
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) all.push(getPixel(data, size, x, y));
+    const avg = averageRgb(all);
+    return rgbToHex(avg.r, avg.g, avg.b);
+  }
+  return rgbToHex(best.r / best.count, best.g / best.count, best.b / best.count);
+}
+
+function getPixel(data, width, x, y) {
+  const i = (y * width + x) * 4;
+  return { r: data[i], g: data[i + 1], b: data[i + 2] };
+}
+
+function averageRgb(pixels) {
+  const sum = pixels.reduce((a, p) => ({ r: a.r + p.r, g: a.g + p.g, b: a.b + p.b }), { r: 0, g: 0, b: 0 });
+  return { r: sum.r / pixels.length, g: sum.g / pixels.length, b: sum.b / pixels.length };
+}
+
+/** Legge il colore medio in un piccolo raggio attorno a un punto (per l'analisi viso a marker) */
+function samplePointColor(canvas, xNorm, yNorm, radius = 6) {
+  const ctx = canvas.getContext('2d');
+  const cx = Math.round(xNorm * canvas.width);
+  const cy = Math.round(yNorm * canvas.height);
+  // clamp per evitare finestre di lettura con larghezza/altezza 0 o negative ai bordi
+  const x0 = Math.max(0, Math.min(cx - radius, canvas.width - 1));
+  const y0 = Math.max(0, Math.min(cy - radius, canvas.height - 1));
+  const w = Math.max(1, Math.min(radius * 2, canvas.width - x0));
+  const h = Math.max(1, Math.min(radius * 2, canvas.height - y0));
+  const data = ctx.getImageData(x0, y0, w, h).data;
+  const pixels = [];
+  for (let i = 0; i < data.length; i += 4) pixels.push({ r: data[i], g: data[i + 1], b: data[i + 2] });
+  const avg = averageRgb(pixels);
+  return rgbToHex(avg.r, avg.g, avg.b);
+}
+
+/* ===================== ANALISI ARMOCROMATICA ===================== */
+
+/* ===================== BILANCIAMENTO DEL BIANCO ===================== */
+
+/**
+ * Calcola i fattori di correzione a partire da un punto che dovrebbe essere neutro
+ * (il bianco dell'occhio). Rimuove la dominante di colore data dalla luce ambiente.
+ */
+function computeWhiteBalanceFactors(referenceHex) {
+  const { r, g, b } = hexToRgb(referenceHex);
+  const avg = (r + g + b) / 3;
+  const safe = (v) => (v < 8 ? 8 : v); // evita divisioni per valori troppo vicini a zero
+  return { r: avg / safe(r), g: avg / safe(g), b: avg / safe(b) };
+}
+
+function applyWhiteBalance(hex, factors) {
+  const { r, g, b } = hexToRgb(hex);
+  // limitiamo la correzione per evitare distorsioni eccessive su letture rumorose
+  const clamp = (f) => Math.max(0.6, Math.min(1.6, f));
+  return rgbToHex(r * clamp(factors.r), g * clamp(factors.g), b * clamp(factors.b));
+}
+
+/* ===================== ANALISI ARMOCROMATICA ===================== */
+
+/**
+ * markers: { pelle: hex, capelli: hex, occhi: hex, bianco?: hex }
+ * "bianco" (sclera, bianco dell'occhio) è opzionale: se presente viene usato per
+ * correggere la dominante di colore della foto prima del calcolo.
+ * Ritorna { seasonKey, sottotono, contrasto, profondita, marginNote, markers }
+ */
+function computeSeason(markers) {
+  let { pelle, capelli, occhi } = markers;
+
+  if (markers.bianco) {
+    const factors = computeWhiteBalanceFactors(markers.bianco);
+    pelle = applyWhiteBalance(pelle, factors);
+    capelli = applyWhiteBalance(capelli, factors);
+    occhi = applyWhiteBalance(occhi, factors);
+  }
+
+  const labPelle = hexToLab(pelle);
+  const labCapelli = hexToLab(capelli);
+  const labOcchi = hexToLab(occhi);
+
+  // Sottotono: combiniamo pelle (peso maggiore) e occhi (peso minore), più stabile
+  // della sola pelle e più vicino al metodo usato dai consulenti d'immagine.
+  const warmthPelle = (labPelle.b * 1.0) - (labPelle.a * 0.2);
+  const warmthOcchi = (labOcchi.b * 1.0) - (labOcchi.a * 0.2);
+  const warmthScore = warmthPelle * 0.7 + warmthOcchi * 0.3;
+  const WARMTH_THRESHOLD = 11;
+  const sottotono = warmthScore > WARMTH_THRESHOLD ? 'caldo' : 'freddo';
+
+  // Profondità: luminosità media di pelle e capelli
+  const valoreMedio = (labPelle.l * 0.5) + (labCapelli.l * 0.5);
+  const DEPTH_THRESHOLD = 55;
+  const profonda = valoreMedio < DEPTH_THRESHOLD;
+
+  // Contrasto: differenza di luminosità tra pelle e capelli/occhi
+  const contrasto = (Math.abs(labPelle.l - labCapelli.l) + Math.abs(labPelle.l - labOcchi.l)) / 2;
+  const contrastoLabel = contrasto > 35 ? 'alto' : contrasto > 18 ? 'medio' : 'basso';
+
+  let seasonKey;
+  if (sottotono === 'caldo') seasonKey = profonda ? 'autunno' : 'primavera';
+  else seasonKey = profonda ? 'inverno' : 'estate';
+
+  // Nota di affidabilità: se siamo vicini a una delle due soglie decisive, il risultato
+  // è "al limite" e una foto con luce diversa potrebbe spostarlo verso la stagione vicina.
+  const warmthMargin = Math.abs(warmthScore - WARMTH_THRESHOLD);
+  const depthMargin = Math.abs(valoreMedio - DEPTH_THRESHOLD);
+  let marginNote = null;
+  if (warmthMargin < 4) {
+    marginNote = 'Il tuo sottotono (caldo/freddo) è abbastanza vicino al confine tra due stagioni: la luce della foto può influenzare il risultato. Se rifai l\'analisi in condizioni di luce diversa e il risultato cambia, è normale — prova con luce naturale indiretta e confronta più tentativi.';
+  } else if (depthMargin < 6) {
+    marginNote = 'La tua profondità (chiara/scura) è abbastanza vicina al confine tra due stagioni: piccole variazioni di luce o trucco possono spostare il risultato tra le due stagioni più vicine.';
+  }
+
+  return {
+    seasonKey,
+    sottotono,
+    contrasto: contrastoLabel,
+    profondita: profonda ? 'scura' : 'chiara',
+    marginNote,
+    markers
+  };
+}
+
+/* ===================== OUTFIT GENERATOR ===================== */
+
+const CATEGORY_GROUPS = {
+  top: ['camicie', 'magliette'],
+  bottom: ['pantaloni', 'jeans'],
+  outer: ['giacche'],
+  shoes: ['scarpe']
+};
+
+function colorHarmonyBonus(hexA, hexB) {
+  if (isNearNeutral(hexA) || isNearNeutral(hexB)) return 12; // i neutri abbinano quasi sempre
+  const d = deltaE(hexToLab(hexA), hexToLab(hexB));
+  if (d < 15) return 10; // tono su tono
+  if (d > 20 && d < 55) return 8; // buon contrasto bilanciato
+  if (d >= 55 && d < 75) return 3; // contrasto forte, rischioso ma possibile
+  return -6; // troppo simile-sporco o clash eccessivo
+}
+
+function itemScore(item, seasonKey) {
+  const ev = evaluateColorAgainstSeason(item.color, seasonKey);
+  item._eval = ev;
+  return ev.score ?? 0;
+}
+
+/**
+ * Genera combinazioni outfit dal guardaroba.
+ * options: { seasonKey, weatherFilter: fn(item)=>bool, count }
+ */
+function generateOutfits(wardrobe, options = {}) {
+  const { seasonKey, weatherFilter, count = 6 } = options;
+  const byCat = {};
+  for (const it of wardrobe) {
+    if (weatherFilter && !weatherFilter(it)) continue;
+    if (!byCat[it.category]) byCat[it.category] = [];
+    byCat[it.category].push(it);
+  }
+  const tops = CATEGORY_GROUPS.top.flatMap(c => byCat[c] || []);
+  const bottoms = CATEGORY_GROUPS.bottom.flatMap(c => byCat[c] || []);
+  const outers = CATEGORY_GROUPS.outer.flatMap(c => byCat[c] || []);
+  const shoes = CATEGORY_GROUPS.shoes.flatMap(c => byCat[c] || []);
+
+  if (!tops.length || !bottoms.length || !shoes.length) return [];
+
+  const combos = [];
+  for (const top of tops) {
+    for (const bottom of bottoms) {
+      for (const shoe of shoes) {
+        const pieces = [top, bottom, shoe];
+        const outer = outers.length ? outers[Math.floor(Math.random() * outers.length)] : null;
+        if (outer && Math.random() > 0.4) pieces.push(outer);
+        let score = 0;
+        for (const p of pieces) score += itemScore(p, seasonKey);
+        for (let i = 0; i < pieces.length; i++) {
+          for (let j = i + 1; j < pieces.length; j++) {
+            score += colorHarmonyBonus(pieces[i].color, pieces[j].color);
+          }
+        }
+        combos.push({ pieces, score });
+      }
+    }
+  }
+  combos.sort((a, b) => b.score - a.score);
+  // dedup leggero e shuffle tra i migliori per varietà
+  const top20 = combos.slice(0, Math.max(count * 3, 20));
+  shuffleArray(top20);
+  top20.sort((a, b) => b.score - a.score);
+  return top20.slice(0, count);
+}
+
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+/** Suggerisce i migliori capi del guardaroba da abbinare a un nuovo capo (cross categoria) */
+function suggestPairingsForItem(newItem, wardrobe, seasonKey) {
+  const compatibleCats = Object.values(CATEGORY_GROUPS).find(g => g.includes(newItem.category));
+  const otherGroups = Object.entries(CATEGORY_GROUPS).filter(([, cats]) => !cats.includes(newItem.category));
+  const suggestions = [];
+  for (const [, cats] of otherGroups) {
+    const candidates = wardrobe.filter(it => cats.includes(it.category));
+    let best = null, bestScore = -Infinity;
+    for (const c of candidates) {
+      const s = itemScore(c, seasonKey) + colorHarmonyBonus(newItem.color, c.color);
+      if (s > bestScore) { bestScore = s; best = c; }
+    }
+    if (best) suggestions.push({ item: best, score: bestScore });
+  }
+  return suggestions.sort((a, b) => b.score - a.score);
+}
+
+/* ===================== METEO ===================== */
+
+async function fetchWeather(apiKey, lat, lon) {
+  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&lang=it&appid=${apiKey}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Errore nella richiesta meteo (' + res.status + ')');
+  return res.json();
+}
+
+function getGeolocation() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) return reject(new Error('Geolocalizzazione non supportata'));
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
+      (err) => reject(err),
+      { timeout: 10000 }
+    );
+  });
+}
+
+/** Restituisce un filtro capi in base a temperatura/condizioni, e una nota testuale */
+function weatherOutfitFilter(weatherData) {
+  const temp = weatherData.main.temp;
+  const condition = weatherData.weather[0].main.toLowerCase();
+  const isRain = condition.includes('rain') || condition.includes('drizzle') || condition.includes('thunderstorm');
+  let note = '';
+  let filter = () => true;
+
+  if (temp < 8) {
+    note = 'Fa freddo: preferisci giacche pesanti e strati caldi.';
+    filter = (it) => !(it.tags || []).includes('leggero');
+  } else if (temp < 16) {
+    note = 'Clima fresco: giacca leggera consigliata.';
+  } else if (temp < 24) {
+    note = 'Temperatura mite: puoi restare senza giacca pesante.';
+    filter = (it) => it.category !== 'giacche' || !(it.tags || []).includes('pesante');
+  } else {
+    note = 'Fa caldo: privilegia capi leggeri, evita giacche pesanti.';
+    filter = (it) => !(it.category === 'giacche' && (it.tags || []).includes('pesante'));
+  }
+  if (isRain) note += ' Pioggia in arrivo: porta un capo impermeabile o un ombrello.';
+  return { filter, note, isRain, temp, description: weatherData.weather[0].description };
+}
+
+/* ===================== EXPORT / IMPORT ===================== */
+
+async function exportAllData() {
+  const profile = await metaGet('profile');
+  const settings = await metaGet('settings');
+  const wardrobe = await wardrobeAll();
+  const payload = { version: 1, exportedAt: new Date().toISOString(), profile, settings, wardrobe };
+  const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `armocromia-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function importAllData(file, mode) {
+  const text = await file.text();
+  const payload = JSON.parse(text);
+  if (payload.profile) await metaSet('profile', payload.profile);
+  if (payload.settings) await metaSet('settings', payload.settings);
+  if (Array.isArray(payload.wardrobe)) {
+    if (mode === 'replace') await wardrobeClear();
+    for (const item of payload.wardrobe) {
+      const clone = { ...item };
+      if (mode === 'replace') {
+        await wardrobeAdd(clone);
+      } else {
+        delete clone.id;
+        await wardrobeAdd(clone);
+      }
+    }
+  }
+}
+</script>
+<script>/* ===================== STATO GLOBALE ===================== */
+const state = {
+  profile: null,      // { seasonKey, sottotono, contrasto, profondita, markers, photo }
+  settings: { weatherApiKey: '', city: '' },
+  wardrobe: [],
+  currentTab: 'profilo',
+  faceMarkers: {},     // punti temporanei durante l'analisi
+  activeMarkerType: 'pelle',
+  wardrobeFilterCat: 'tutti',
+  lastOutfits: [],
+  purchaseItem: null   // { photo, color, category }
+};
+
+const CATEGORY_LABELS = {
+  camicie: 'Camicie', pantaloni: 'Pantaloni', jeans: 'Jeans',
+  magliette: 'Magliette', giacche: 'Giacche', scarpe: 'Scarpe', accessori: 'Accessori'
+};
+const CATEGORY_LIST = Object.keys(CATEGORY_LABELS);
+
+const STATUS_LABELS = {
+  'in linea': { label: 'In linea', cls: 'status-ok' },
+  'parziale': { label: 'Parziale', cls: 'status-mid' },
+  'fuori palette': { label: 'Fuori palette', cls: 'status-off' },
+  'neutro': { label: 'Neutro — jolly', cls: 'status-neutral' },
+  'n/d': { label: 'Da valutare', cls: 'status-mid' }
+};
+
+/* ===================== INIT ===================== */
+
+async function init() {
+  try {
+    await openDB();
+  } catch (err) {
+    console.error('Impossibile aprire il database locale:', err);
+    document.querySelector('main').innerHTML = `
+      <div class="card">
+        <h2>Impossibile avviare l'app</h2>
+        <p>Il salvataggio locale dei dati non è disponibile in questo browser o modalità di navigazione.</p>
+        <p class="muted">Se sei in Navigazione privata su Safari, esci da quella modalità e riapri la pagina. Verifica anche che Safari non abbia i "Cookie e dati dei siti web" completamente bloccati (Impostazioni → Safari).</p>
+      </div>`;
+    return;
+  }
+  state.profile = await metaGet('profile');
+  const savedSettings = await metaGet('settings');
+  if (savedSettings) state.settings = savedSettings;
+  state.wardrobe = await wardrobeAll();
+  bindNav();
+  bindGlobalForms();
+  renderAll();
+  navigate('profilo');
+}
+
+function bindNav() {
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    btn.addEventListener('click', () => navigate(btn.dataset.tab));
+  });
+}
+
+function navigate(tab) {
+  state.currentTab = tab;
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  const view = document.getElementById('view-' + tab);
+  if (view) view.classList.add('active');
+  if (tab === 'guardaroba') renderWardrobe();
+  if (tab === 'outfit') renderOutfitTab();
+  if (tab === 'meteo') renderMeteoTab();
+  if (tab === 'acquisto') renderPurchaseTab();
+  if (tab === 'impostazioni') renderSettingsTab();
+  const fab = document.getElementById('btn-add-item');
+  if (fab) fab.style.display = tab === 'guardaroba' ? 'inline-flex' : 'none';
+  window.scrollTo(0, 0);
+}
+
+function renderAll() {
+  renderProfileTab();
+}
+
+/* ===================== TAB: PROFILO (analisi armocromatica) ===================== */
+
+function getEffectiveSeasonKey() {
+  if (!state.profile) return null;
+  return state.profile.overrideSeasonKey || state.profile.seasonKey;
+}
+
+function renderProfileTab() {
+  const container = document.getElementById('view-profilo');
+  if (state.profile && state.profile.seasonKey) {
+    const effectiveKey = getEffectiveSeasonKey();
+    const s = SEASONS[effectiveKey];
+    const isOverridden = !!state.profile.overrideSeasonKey;
+    container.innerHTML = `
+      <div class="card result-card">
+        <div class="eyebrow">Il tuo profilo colore</div>
+        <h2 class="season-title">${s.name}</h2>
+        ${isOverridden
+          ? `<p class="muted">Impostata manualmente (il calcolo automatico aveva dato: ${SEASONS[state.profile.seasonKey].name})</p>`
+          : `<p class="muted">Sottotono ${state.profile.sottotono} · profondità ${state.profile.profondita} · contrasto ${state.profile.contrasto}</p>`
+        }
+        <p>${s.descrizione}</p>
+        ${state.profile.marginNote && !isOverridden ? `<div class="margin-note">⚠️ ${escapeHtml(state.profile.marginNote)}</div>` : ''}
+        <div class="swatch-fan">
+          ${s.colors.map(c => `<div class="swatch" style="background:${c}" title="${c}"></div>`).join('')}
+        </div>
+        <div class="eyebrow small">Neutri consigliati</div>
+        <div class="swatch-fan small">
+          ${s.neutrals.map(c => `<div class="swatch" style="background:${c}" title="${c}"></div>`).join('')}
+        </div>
+        <button class="btn btn-outline" id="btn-redo-analysis">Rifai l'analisi</button>
+      </div>
+
+      <div class="card">
+        <div class="eyebrow">Non convinto del risultato?</div>
+        <h3 style="margin-top:0;">Correggi manualmente</h3>
+        <p class="muted">Se sai già la tua stagione (es. da una consulenza fatta di persona), puoi impostarla direttamente qui: verrà usata per tutte le valutazioni di guardaroba, outfit e acquisti.</p>
+        <div class="field">
+          <select id="season-override-select">
+            <option value="">— Usa il calcolo automatico —</option>
+            <option value="primavera">Primavera</option>
+            <option value="estate">Estate</option>
+            <option value="autunno">Autunno</option>
+            <option value="inverno">Inverno</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="eyebrow">Auto-verifica rapida</div>
+        <h3 style="margin-top:0;">Un secondo controllo, senza foto</h3>
+        <p class="muted">Confronta questi indizi classici con il risultato ottenuto — se concordano, è un buon segno di affidabilità:</p>
+        <ul class="checklist">
+          <li><b>Venature del polso:</b> tendenti al blu/viola → sottotono freddo. Tendenti al verde/oliva → sottotono caldo.</li>
+          <li><b>Reazione al sole:</b> ti scotti facilmente e abbronzi poco → spesso freddo. Abbronzi con facilità → spesso caldo.</li>
+          <li><b>Gioielli:</b> l'argento/platino ti dona più dell'oro → spesso freddo. Il contrario → spesso caldo.</li>
+        </ul>
+      </div>
+    `;
+    document.getElementById('btn-redo-analysis').addEventListener('click', startFaceAnalysis);
+    const select = document.getElementById('season-override-select');
+    select.value = state.profile.overrideSeasonKey || '';
+    select.addEventListener('change', async () => {
+      state.profile.overrideSeasonKey = select.value || null;
+      await metaSet('profile', state.profile);
+      renderProfileTab();
+      renderWardrobe();
+    });
+  } else {
+    container.innerHTML = `
+      <div class="card">
+        <div class="eyebrow">Analisi armocromatica</div>
+        <h2>Scopri la tua stagione colore</h2>
+        <p class="muted">Per un risultato affidabile e ripetibile nel tempo, prima di scattare:</p>
+        <ul class="checklist">
+          <li>Luce naturale indiretta (vicino a una finestra, mai controluce o al buio)</li>
+          <li>Viso struccato o con trucco leggero</li>
+          <li>Capelli come li porti di solito, non bagnati né completamente raccolti</li>
+          <li>Foto frontale, nessun filtro</li>
+        </ul>
+        <label class="btn btn-primary file-btn">
+          Carica foto viso
+          <input type="file" accept="image/*" id="input-face-photo" hidden>
+        </label>
+      </div>
+    `;
+    document.getElementById('input-face-photo').addEventListener('change', onFacePhotoSelected);
+  }
+}
+
+function startFaceAnalysis() {
+  document.getElementById('view-profilo').innerHTML = `
+    <div class="card">
+      <div class="eyebrow">Analisi armocromatica</div>
+      <h2>Scopri la tua stagione colore</h2>
+      <p class="muted">Carica una foto del viso ben illuminata, frontale, senza filtri e senza trucco pesante.</p>
+      <label class="btn btn-primary file-btn">
+        Carica foto viso
+        <input type="file" accept="image/*" id="input-face-photo" hidden>
+      </label>
+    </div>
+  `;
+  document.getElementById('input-face-photo').addEventListener('change', onFacePhotoSelected);
+}
+
+async function onFacePhotoSelected(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const img = await loadImageFromFile(file);
+  const compressed = compressImage(img, 700, 0.85);
+  const finalImg = await dataUrlToImage(compressed);
+  showFaceMarkerUI(finalImg, compressed);
+}
+
+function showFaceMarkerUI(img, photoDataUrl) {
+  state.faceMarkers = {};
+  state.activeMarkerType = 'pelle';
+  const container = document.getElementById('view-profilo');
+  container.innerHTML = `
+    <div class="card">
+      <div class="eyebrow">Passo 2 di 2</div>
+      <h2>Posiziona i quattro marker</h2>
+      <p class="muted">Tocca la foto per posizionare il marker attivo, in ordine: <b>pelle</b> (guancia), <b>capelli</b>, <b>occhi</b> (iride), poi <b>bianco dell'occhio</b> (la sclera, non l'iride) — quest'ultimo serve a correggere eventuali dominanti di colore della luce e rendere il risultato più stabile.</p>
+      <div class="marker-controls">
+        <button class="chip active" data-marker="pelle">1 · Pelle</button>
+        <button class="chip" data-marker="capelli">2 · Capelli</button>
+        <button class="chip" data-marker="occhi">3 · Occhi</button>
+        <button class="chip" data-marker="bianco">4 · Bianco occhio</button>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="face-canvas"></canvas>
+      </div>
+      <button class="btn btn-primary" id="btn-confirm-markers" disabled>Calcola la mia stagione</button>
+    </div>
+  `;
+  const canvas = document.getElementById('face-canvas');
+  const maxW = Math.min(500, window.innerWidth - 64);
+  const scale = maxW / img.width;
+  canvas.width = img.width * scale;
+  canvas.height = img.height * scale;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+  document.querySelectorAll('.marker-controls .chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      state.activeMarkerType = chip.dataset.marker;
+      document.querySelectorAll('.marker-controls .chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+    });
+  });
+
+  const markerColors = { pelle: '#B7574A', capelli: '#2E5C55', occhi: '#0F2A4A', bianco: '#8C877D' };
+  const order = ['pelle', 'capelli', 'occhi', 'bianco'];
+
+  canvas.addEventListener('click', (evt) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = (evt.clientX - rect.left);
+    const y = (evt.clientY - rect.top);
+    const xNorm = x / canvas.width, yNorm = y / canvas.height;
+    // il bianco dell'occhio è un'area piccola: usiamo un raggio di campionamento più stretto
+    const radius = state.activeMarkerType === 'bianco' ? 4 : 11;
+    const hex = samplePointColor(canvas, xNorm, yNorm, radius);
+    state.faceMarkers[state.activeMarkerType] = { xNorm, yNorm, hex };
+    redrawFaceCanvas(canvas, img, markerColors);
+    const idx = order.indexOf(state.activeMarkerType);
+    if (idx < order.length - 1) {
+      const next = order[idx + 1];
+      state.activeMarkerType = next;
+      document.querySelectorAll('.marker-controls .chip').forEach(c => c.classList.toggle('active', c.dataset.marker === next));
+    }
+    const btn = document.getElementById('btn-confirm-markers');
+    btn.disabled = !(state.faceMarkers.pelle && state.faceMarkers.capelli && state.faceMarkers.occhi && state.faceMarkers.bianco);
+  });
+
+  document.getElementById('btn-confirm-markers').addEventListener('click', async (evt) => {
+    const btn = evt.currentTarget;
+    const originalLabel = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Calcolo in corso…';
+    try {
+      if (!state.faceMarkers.pelle || !state.faceMarkers.capelli || !state.faceMarkers.occhi || !state.faceMarkers.bianco) {
+        throw new Error('Posiziona tutti e quattro i marker prima di continuare.');
+      }
+      const markers = {
+        pelle: state.faceMarkers.pelle.hex,
+        capelli: state.faceMarkers.capelli.hex,
+        occhi: state.faceMarkers.occhi.hex,
+        bianco: state.faceMarkers.bianco.hex
+      };
+      const result = computeSeason(markers);
+      state.profile = { ...result, overrideSeasonKey: null, photo: photoDataUrl, analyzedAt: new Date().toISOString() };
+      await metaSet('profile', state.profile);
+      renderProfileTab();
+      // ricalcola i match del guardaroba con la nuova stagione
+      renderWardrobe();
+    } catch (err) {
+      console.error('Errore nel calcolo della stagione:', err);
+      btn.disabled = false;
+      btn.textContent = originalLabel;
+      alert('Non sono riuscito a calcolare la stagione: ' + (err && err.message ? err.message : err) +
+            '\n\nSe sei in Navigazione privata su Safari, esci da quella modalità: il salvataggio locale dei dati non funziona lì.');
+    }
+  });
+}
+
+function redrawFaceCanvas(canvas, img, markerColors) {
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  for (const [type, m] of Object.entries(state.faceMarkers)) {
+    ctx.beginPath();
+    ctx.arc(m.xNorm * canvas.width, m.yNorm * canvas.height, 8, 0, Math.PI * 2);
+    ctx.fillStyle = markerColors[type];
+    ctx.globalAlpha = 0.85;
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#fff';
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+}
+
+/* ===================== TAB: GUARDAROBA ===================== */
+
+function bindGlobalForms() {
+  document.getElementById('btn-add-item').addEventListener('click', () => openItemModal());
+  document.getElementById('item-modal-close').addEventListener('click', closeItemModal);
+  document.getElementById('item-modal-backdrop').addEventListener('click', closeItemModal);
+  document.getElementById('item-form').addEventListener('submit', onItemFormSubmit);
+  document.getElementById('item-photo-input').addEventListener('change', onItemPhotoChange);
+
+  document.querySelectorAll('.wardrobe-filter').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.wardrobeFilterCat = btn.dataset.cat;
+      document.querySelectorAll('.wardrobe-filter').forEach(b => b.classList.toggle('active', b === btn));
+      renderWardrobe();
+    });
+  });
+
+  document.getElementById('btn-generate-outfits').addEventListener('click', () => {
+    renderOutfitResults();
+  });
+
+  document.getElementById('btn-fetch-weather').addEventListener('click', onFetchWeather);
+  document.getElementById('weather-api-key').addEventListener('change', async (e) => {
+    state.settings.weatherApiKey = e.target.value.trim();
+    await metaSet('settings', state.settings);
+  });
+
+  document.getElementById('purchase-photo-input').addEventListener('change', onPurchasePhotoChange);
+  document.getElementById('btn-purchase-analyze').addEventListener('click', analyzePurchaseItem);
+
+  document.getElementById('btn-export').addEventListener('click', exportAllData);
+  document.getElementById('import-file-input').addEventListener('change', onImportFile);
+}
+
+function renderWardrobe() {
+  const grid = document.getElementById('wardrobe-grid');
+  const items = state.wardrobe
+    .filter(it => state.wardrobeFilterCat === 'tutti' || it.category === state.wardrobeFilterCat)
+    .sort((a, b) => (b.id || 0) - (a.id || 0));
+
+  if (!items.length) {
+    grid.innerHTML = `<div class="empty-state">Nessun capo qui. Tocca "+ Aggiungi capo" per iniziare il tuo catalogo.</div>`;
+    return;
+  }
+
+  grid.innerHTML = items.map(it => {
+    const ev = evaluateColorAgainstSeason(it.color, getEffectiveSeasonKey());
+    const st = STATUS_LABELS[ev.status] || STATUS_LABELS['n/d'];
+    return `
+      <div class="item-card" data-id="${it.id}">
+        <div class="item-photo" style="background-image:url('${it.photo}')"></div>
+        <div class="item-body">
+          <div class="item-top-row">
+            <span class="color-dot" style="background:${it.color}"></span>
+            <span class="status-badge ${st.cls}">${st.label}</span>
+          </div>
+          <div class="item-name">${escapeHtml(it.name || CATEGORY_LABELS[it.category])}</div>
+          <div class="item-cat muted">${CATEGORY_LABELS[it.category]}${it.tags && it.tags.length ? ' · ' + it.tags.map(escapeHtml).join(', ') : ''}</div>
+          <button class="btn-text btn-delete-item" data-id="${it.id}">Rimuovi</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  grid.querySelectorAll('.btn-delete-item').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = Number(btn.dataset.id);
+      if (!confirm('Rimuovere questo capo dal guardaroba?')) return;
+      await wardrobeDelete(id);
+      state.wardrobe = state.wardrobe.filter(it => it.id !== id);
+      renderWardrobe();
+    });
+  });
+}
+
+let pendingItemPhoto = null;
+let pendingItemColor = null;
+
+function openItemModal() {
+  document.getElementById('item-form').reset();
+  document.getElementById('item-photo-preview').style.backgroundImage = '';
+  document.getElementById('item-photo-preview').classList.remove('has-photo');
+  pendingItemPhoto = null;
+  pendingItemColor = null;
+  document.getElementById('item-color-preview').style.background = 'transparent';
+  document.getElementById('item-modal').classList.add('open');
+}
+
+function closeItemModal() {
+  document.getElementById('item-modal').classList.remove('open');
+}
+
+async function onItemPhotoChange(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const img = await loadImageFromFile(file);
+  pendingItemPhoto = compressImage(img, 700, 0.82);
+  const finalImg = await dataUrlToImage(pendingItemPhoto);
+  pendingItemColor = extractDominantColor(finalImg);
+  document.getElementById('item-photo-preview').style.backgroundImage = `url('${pendingItemPhoto}')`;
+  document.getElementById('item-photo-preview').classList.add('has-photo');
+  document.getElementById('item-color-preview').style.background = pendingItemColor;
+}
+
+async function onItemFormSubmit(e) {
+  e.preventDefault();
+  if (!pendingItemPhoto || !pendingItemColor) {
+    alert('Carica prima una foto del capo.');
+    return;
+  }
+  const form = e.target;
+  const name = form.elements['name'].value.trim();
+  const category = form.elements['category'].value;
+  const tagsRaw = form.elements['tags'].value.trim();
+  const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
+
+  const item = { name, category, tags, photo: pendingItemPhoto, color: pendingItemColor, addedAt: new Date().toISOString() };
+  const id = await wardrobeAdd(item);
+  item.id = id;
+  state.wardrobe.push(item);
+  closeItemModal();
+  renderWardrobe();
+}
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+/* ===================== TAB: OUTFIT ===================== */
+
+function renderOutfitTab() {
+  const infoEl = document.getElementById('outfit-info');
+  if (!state.profile) {
+    infoEl.innerHTML = `<div class="empty-state">Completa prima l'analisi armocromatica nella scheda "Profilo".</div>`;
+    document.getElementById('btn-generate-outfits').disabled = true;
+    return;
+  }
+  document.getElementById('btn-generate-outfits').disabled = false;
+  infoEl.innerHTML = '';
+  renderOutfitResults();
+}
+
+function renderOutfitResults(weatherFilter) {
+  const resultsEl = document.getElementById('outfit-results');
+  if (!state.profile) return;
+  const combos = generateOutfits(state.wardrobe, { seasonKey: getEffectiveSeasonKey(), weatherFilter, count: 6 });
+  if (!combos.length) {
+    resultsEl.innerHTML = `<div class="empty-state">Servono almeno un top, un pantalone/jeans e un paio di scarpe nel guardaroba per generare un outfit.</div>`;
+    return;
+  }
+  resultsEl.innerHTML = combos.map(combo => `
+    <div class="outfit-card">
+      <div class="outfit-pieces">
+        ${combo.pieces.map(p => `<div class="outfit-piece"><div class="item-photo small" style="background-image:url('${p.photo}')"></div><div class="muted tiny">${CATEGORY_LABELS[p.category]}</div></div>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ===================== TAB: METEO ===================== */
+
+function renderMeteoTab() {
+  document.getElementById('weather-api-key').value = state.settings.weatherApiKey || '';
+  const resultEl = document.getElementById('weather-result');
+  if (!resultEl.dataset.loaded) resultEl.innerHTML = '';
+}
+
+async function onFetchWeather() {
+  const resultEl = document.getElementById('weather-result');
+  const apiKey = state.settings.weatherApiKey;
+  if (!apiKey) {
+    resultEl.innerHTML = `<div class="empty-state">Inserisci prima la tua API key gratuita di OpenWeatherMap qui sopra.</div>`;
+    return;
+  }
+  resultEl.innerHTML = `<div class="muted">Rilevamento posizione…</div>`;
+  try {
+    const { lat, lon } = await getGeolocation();
+    resultEl.innerHTML = `<div class="muted">Recupero meteo…</div>`;
+    const data = await fetchWeather(apiKey, lat, lon);
+    const info = weatherOutfitFilter(data);
+    resultEl.dataset.loaded = '1';
+    resultEl.innerHTML = `
+      <div class="card weather-card">
+        <div class="eyebrow">${escapeHtml(data.name || 'Posizione attuale')}</div>
+        <div class="weather-temp">${Math.round(info.temp)}°C</div>
+        <p class="muted">${escapeHtml(info.description)}</p>
+        <p>${escapeHtml(info.note)}</p>
+      </div>
+      <h3>Outfit consigliati per oggi</h3>
+      <div id="weather-outfits" class="outfit-list"></div>
+    `;
+    const combos = state.profile ? generateOutfits(state.wardrobe, { seasonKey: getEffectiveSeasonKey(), weatherFilter: info.filter, count: 4 }) : [];
+    const outfitsEl = document.getElementById('weather-outfits');
+    if (!state.profile) {
+      outfitsEl.innerHTML = `<div class="empty-state">Completa l'analisi armocromatica per ricevere outfit personalizzati.</div>`;
+    } else if (!combos.length) {
+      outfitsEl.innerHTML = `<div class="empty-state">Aggiungi più capi al guardaroba per generare outfit adatti a questo meteo.</div>`;
+    } else {
+      outfitsEl.innerHTML = combos.map(combo => `
+        <div class="outfit-card">
+          <div class="outfit-pieces">
+            ${combo.pieces.map(p => `<div class="outfit-piece"><div class="item-photo small" style="background-image:url('${p.photo}')"></div><div class="muted tiny">${CATEGORY_LABELS[p.category]}</div></div>`).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+  } catch (err) {
+    resultEl.innerHTML = `<div class="empty-state">Errore: ${escapeHtml(err.message || 'impossibile recuperare il meteo')}. Verifica la API key e i permessi di geolocalizzazione di Safari.</div>`;
+  }
+}
+
+/* ===================== TAB: NUOVO ACQUISTO ===================== */
+
+let pendingPurchasePhoto = null;
+let pendingPurchaseColor = null;
+
+function renderPurchaseTab() {
+  document.getElementById('purchase-result').innerHTML = '';
+  document.getElementById('purchase-photo-preview').style.backgroundImage = '';
+  document.getElementById('purchase-photo-preview').classList.remove('has-photo');
+  pendingPurchasePhoto = null;
+  pendingPurchaseColor = null;
+}
+
+async function onPurchasePhotoChange(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const img = await loadImageFromFile(file);
+  pendingPurchasePhoto = compressImage(img, 700, 0.82);
+  const finalImg = await dataUrlToImage(pendingPurchasePhoto);
+  pendingPurchaseColor = extractDominantColor(finalImg);
+  document.getElementById('purchase-photo-preview').style.backgroundImage = `url('${pendingPurchasePhoto}')`;
+  document.getElementById('purchase-photo-preview').classList.add('has-photo');
+}
+
+function analyzePurchaseItem() {
+  const resultEl = document.getElementById('purchase-result');
+  if (!pendingPurchasePhoto) {
+    resultEl.innerHTML = `<div class="empty-state">Scatta o carica prima una foto del capo.</div>`;
+    return;
+  }
+  if (!state.profile) {
+    resultEl.innerHTML = `<div class="empty-state">Completa l'analisi armocromatica nella scheda "Profilo" per ricevere un giudizio.</div>`;
+    return;
+  }
+  const category = document.getElementById('purchase-category').value;
+  const ev = evaluateColorAgainstSeason(pendingPurchaseColor, getEffectiveSeasonKey());
+  const st = STATUS_LABELS[ev.status] || STATUS_LABELS['n/d'];
+  const newItem = { color: pendingPurchaseColor, category };
+  const pairings = suggestPairingsForItem(newItem, state.wardrobe, getEffectiveSeasonKey());
+
+  let verdictText;
+  if (ev.status === 'in linea') verdictText = 'Ottima scelta: questo colore è pienamente in linea con la tua palette.';
+  else if (ev.status === 'neutro') verdictText = 'È un colore neutro: si abbina facilmente con quasi tutta la tua palette.';
+  else if (ev.status === 'parziale') verdictText = 'Compatibilità parziale: non è il colore ideale per la tua stagione, ma può funzionare in alcuni abbinamenti.';
+  else verdictText = 'Attenzione: questo colore è piuttosto lontano dalla tua palette e rischia di non valorizzarti.';
+
+  resultEl.innerHTML = `
+    <div class="card">
+      <div class="item-top-row">
+        <span class="color-dot" style="background:${pendingPurchaseColor}"></span>
+        <span class="status-badge ${st.cls}">${st.label}</span>
+      </div>
+      <p>${verdictText}</p>
+      ${pairings.length ? `
+        <div class="eyebrow small">Abbinamenti dal tuo guardaroba</div>
+        <div class="pairing-list">
+          ${pairings.map(p => `
+            <div class="outfit-piece">
+              <div class="item-photo small" style="background-image:url('${p.item.photo}')"></div>
+              <div class="muted tiny">${CATEGORY_LABELS[p.item.category]}</div>
+            </div>
+          `).join('')}
+        </div>
+      ` : `<p class="muted">Aggiungi altri capi al guardaroba per vedere suggerimenti di abbinamento.</p>`}
+    </div>
+  `;
+}
+
+/* ===================== TAB: IMPOSTAZIONI / BACKUP ===================== */
+
+function renderSettingsTab() {
+  document.getElementById('settings-weather-key').value = state.settings.weatherApiKey || '';
+  document.getElementById('settings-item-count').textContent = state.wardrobe.length;
+  document.getElementById('settings-season').textContent = state.profile ? SEASONS[getEffectiveSeasonKey()].name : 'non ancora calcolato';
+}
+
+async function onImportFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const mode = document.querySelector('input[name="import-mode"]:checked').value;
+  if (mode === 'replace' && !confirm('Questo sostituirà tutti i dati attuali con quelli del file importato. Continuare?')) {
+    e.target.value = '';
+    return;
+  }
+  try {
+    await importAllData(file, mode);
+    state.profile = await metaGet('profile');
+    state.settings = (await metaGet('settings')) || state.settings;
+    state.wardrobe = await wardrobeAll();
+    alert('Importazione completata.');
+    renderAll();
+    navigate('guardaroba');
+  } catch (err) {
+    alert('Errore durante l\'importazione: ' + err.message);
+  }
+  e.target.value = '';
+}
+
+window.addEventListener('DOMContentLoaded', init);
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch((err) => console.warn('SW non registrato:', err));
+  });
+}
+</script>
+</body>
+</html>
